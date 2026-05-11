@@ -1,4 +1,4 @@
-![repo size](https://img.shields.io/github/repo-size/sravan-reddy/indian-state-profile)
+![repo size](sravanpallapothu/state-profile-creator)
 ![contributors](https://img.shields.io/github/contributors/sravan-reddy/indian-state-profile)
 ![last commit](https://img.shields.io/github/last-commit/sravan-reddy/indian-state-profile)
 ![license](https://img.shields.io/github/license/sravan-reddy/indian-state-profile)
