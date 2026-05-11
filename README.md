@@ -1,7 +1,7 @@
 ![repo size](https://img.shields.io/github/repo-size/sravanpallapothu/state-profile-creator)
 ![contributors](https://img.shields.io/github/contributors/sravanpallapothu/state-profile-creator)
 ![last commit](https://img.shields.io/github/last-commit/sravanpallapothu/state-profile-creator)
-![license](https://img.shields.io/github/license/sravanpallapothu/state-profile-creator)
+
 
 **A Claude skill for generating structured, source-linked state profiles of Indian states — designed for scoping, business development, and policy research.**
 
