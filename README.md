@@ -361,12 +361,5 @@ For states not listed, fetch `sdgindiaindex.niti.gov.in/#/ranking` to identify t
 
 To add indicators, update source assignments, or add new states: edit `SKILL.md` (the template and source consistency table) and `references/source_map.md` (the source-to-URL mapping). Increment the version number in the YAML header and update the `deployed` date.
 
-Suggested future additions:
-- District-level profiles (sub-section of the state profile)
-- CSS scheme fund flow data (PFMS) once a reliable fetch path is established
-- PLFS unemployment rates (currently blocked by RBI Handbook PDF access)
-- State election results history
 
----
-
-*Powered by Claude Sonnet 4 · Data sourced from publicly available Indian government publications*
+*Powered by Claude Sonnet 4 · Data sourced from publicly available information including news articles and datasets
