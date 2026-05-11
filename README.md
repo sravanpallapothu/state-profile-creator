@@ -1,8 +1,7 @@
-
-![repo size](https://img.shields.io/github/repo-size/your-org/indian-state-profile)
-![contributors](https://img.shields.io/github/contributors/your-org/indian-state-profile)
-![last commit](https://img.shields.io/github/last-commit/your-org/indian-state-profile)
-![license](https://img.shields.io/github/license/your-org/indian-state-profile)
+![repo size](https://img.shields.io/github/repo-size/sravan-reddy/indian-state-profile)
+![contributors](https://img.shields.io/github/contributors/sravan-reddy/indian-state-profile)
+![last commit](https://img.shields.io/github/last-commit/sravan-reddy/indian-state-profile)
+![license](https://img.shields.io/github/license/sravan-reddy/indian-state-profile)
 
 
 **A Claude skill for generating structured, source-linked state profiles of Indian states — designed for scoping, business development, and policy research.**
