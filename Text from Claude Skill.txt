@@ -1,0 +1,637 @@
+---
+name: indian-state-profile
+version: 1.0
+deployed: 2026-05-11
+description: >
+  Generate a structured state profile for any Indian state for scoping and business development purposes.
+  Trigger this skill whenever the user types or mentions an Indian state name (e.g. "Odisha", "Rajasthan", "Punjab") — especially in isolation or with minimal context — or when they ask for a "state profile", "state overview", or "background on [state]". Also trigger when the user is preparing for a pitch, scoping exercise, or partner meeting involving a specific Indian state. The output is a structured fact-sheet with columns for value, national rank (where applicable), reference period, source, and comments.
+---
+
+# Indian State Profile Skill
+
+## Purpose
+Produce a fast, accurate, source-linked fact-sheet for any Indian state to support scoping and business development. Output is tabular — each indicator row has: Value | National Rank | Reference Period | Source | Comments.
+
+The profile is organised into six thematic blocks:
+1. Basic Facts & Political Context
+2. Economy & Labour
+3. Public Finance
+4. Human Development (Health · Nutrition · Education)
+5. Physical & Digital Infrastructure
+6. Institutional Infrastructure & Governance Capacity
+
+Each block has a focused sub-structure. Sections that require web-searched live data (cabinet, key officials, SDG scores, policy event timestamps) are explicitly flagged.
+
+---
+
+## Step-by-Step Instructions
+
+### Step 1 — Identify the state
+Resolve common abbreviations: MP = Madhya Pradesh, UP = Uttar Pradesh, AP = Andhra Pradesh, TN = Tamil Nadu, HP = Himachal Pradesh, J&K = Jammu & Kashmir, etc.
+
+### Step 2 — Read the source map
+Read `references/source_map.md` before starting. It maps every field to its authoritative source and URL.
+
+### Step 4 — Document fetch protocol (CRITICAL — read before searching)
+
+Several sources in this profile contain many indicators in a single document — a state page, a PDF table, or a dashboard. **The correct approach is to fetch the document once and extract all relevant indicators from it in a single pass.** Searching field by field against these sources will produce false UNCONFIRMED results even when the data exists in the document.
+
+**Apply this protocol for each multi-indicator source:**
+
+**RBI Handbook of Statistics on Indian States**
+- Fetch: rbidocs.rbi.org.in — search `RBI Handbook of Statistics on Indian States [latest year] site:rbi.org.in` to get the PDF URL, then fetch it
+- In a single pass extract ALL of: GSDP (T21), per capita NDP (T20), unemployment rural/urban (T8/T9), agricultural wage (T113), CPI inflation (T108/T109), net sown area (T54), irrigated area (T55), foodgrain production (T62), forest cover (T99), groundwater (T107), birth rate (T2), death rate (T3), life expectancy (T7), IMR SRS series (T4), MMR (T5), TFR (T6)
+- Do NOT run separate searches for each RBI indicator — one fetch, all fields
+
+**NITI Aayog SDG India Index**
+- Fetch the state-specific dashboard URL directly (no PDF, no search needed):
+  sdgindiaindex.niti.gov.in/#/state-compare?goal=AllGoal&area=[STATE_CODE]&timePeriod=2021
+  Known state codes: IND036=Telangana; IND035=Andhra Pradesh; IND029=Karnataka; IND033=Tamil Nadu; IND021=Odisha; IND027=Maharashtra; IND009=Gujarat; IND005=Rajasthan; IND024=Madhya Pradesh; IND031=Uttar Pradesh; IND010=Bihar
+  If the code is unknown, fetch sdgindiaindex.niti.gov.in/#/ranking to identify it
+- Extract in one pass: composite score + all 16 goal-wise scores
+- Do NOT attempt to parse any PDF (not machine-readable). Do NOT run separate searches per goal.
+
+**NFHS-5 state factsheet**
+- Fetch: try rchiips.org/nfhs/NFHS-5Reports/[State].pdf first; if blocked try dhsprogram.com/pubs/pdf/OF43/OF43.[code].pdf; if blocked try the NITI Aayog SNP report for the state
+- In a single pass extract ALL NFHS-5 indicators in the profile: TFR, sex ratio at birth, institutional delivery, 4+ ANC visits, full immunisation, stunting, wasting, underweight, child anaemia, women anaemia, pregnant women anaemia, households with electricity, improved drinking water, clean cooking fuel, women with mobile phone, women with bank account, birth registration
+- Do NOT run separate NFHS searches per indicator — one fetch, all fields
+
+**SRS Statistical Report**
+- Fetch: search `SRS Statistical Report [latest year] PDF site:censusindia.gov.in` then fetch
+- In a single pass extract: IMR, U5MR, birth rate, death rate, life expectancy, TFR (cross-check)
+- SRS Special Bulletin on MMR: separate fetch for MMR only
+
+**Health Dynamics of India (Infrastructure & HR)**
+- Fetch: mohfw.gov.in/sites/default/files/Health Dynamics of India (Infrastructure & Human Resources) 2022-23 — search `"Health Dynamics of India" 2022-23 site:mohfw.gov.in` then fetch the PDF
+- In a single pass extract: Sub-Centres, PHCs, CHCs, Sub-District Hospitals, District Hospitals, beds, private hospitals for the specific state
+
+**PRS Budget Analysis**
+- Fetch: prsindia.org/files/budget/budget_state/[state]/[year]/Budget_Analysis_[year]-[state].pdf
+- In a single pass extract: total expenditure, revenue expenditure, capital outlay, loans given, own tax revenue, fiscal deficit % GSDP, outstanding liabilities, committed expenditure %, FC devolution, top 3 sector allocations
+
+**Census of India**
+- Fetch: censusindia.gov.in — state-level tables for the specific state
+- In a single pass extract: population, density, urban %, sex ratio, SC %, ST %, literacy (aged 7+), kuccha houses %
+
+**If a fetch fails or returns no usable content:** flag the entire source as `[UNCONFIRMED — [source name] fetch failed]` for all indicators from that source. Do not then run individual field searches against the same source — that will not succeed if the fetch failed.
+
+---
+
+## FIXED SOURCE ASSIGNMENTS — NO DEVIATION PERMITTED
+
+The table below assigns one authoritative source to each indicator category. These assignments are **permanent and non-negotiable**. When a source is assigned, it is the only permitted source for that indicator — regardless of whether an alternative source is more readily accessible, more recent-seeming, or cited in a news article.
+
+**The rule is absolute: if the assigned source is inaccessible, write `[UNCONFIRMED - verify at source URL]` and state the access barrier. Do NOT substitute another source silently. Do NOT use a news article that quotes the primary source figure. Do NOT use Wikipedia. The assigned source or nothing.**
+
+| Indicator Category | Assigned Source | URL | No-deviation note |
+|---|---|---|---|
+| Health outcomes — vital statistics (IMR, MMR, Life Expectancy, Birth Rate, Death Rate) | SRS Statistical Report (latest) | censusindia.gov.in/nada/index.php/catalog/SRS OR registrargeneral.gov.in — search "SRS Statistical Report [latest year]" | SRS only for these five indicators. Never NFHS-5 for IMR/MMR/Life Expectancy/Birth Rate/Death Rate. Never news articles. If latest SRS PDF is inaccessible flag [UNCONFIRMED]. Note: SRS typically lags 2-3 years. |
+| Health outcomes — immunisation (Full Immunisation Coverage %) | NFHS-5 state factsheet | rchiips.org/nfhs/NFHS-5Reports/[State].pdf OR dhsprogram.com/pubs/pdf/OF43/OF43.[code].pdf; fallback: NITI Aayog SNP report | NFHS-5 only for immunisation. Never SRS. Never news articles. |
+| Health outcomes — from NFHS-5 (NMR, U5MR, TFR, sex ratio at birth, institutional delivery, 4+ ANC visits, full immunisation, sanitation) | NFHS-5 state factsheet | rchiips.org/nfhs/NFHS-5Reports/[State].pdf OR dhsprogram.com/pubs/pdf/OF43/OF43.[code].pdf; fallback: NITI Aayog SNP report | NFHS-5 only for all these. NMR and U5MR are in NFHS-5 factsheet Section 2 (child mortality table). Never SRS for these indicators. |
+| Household conditions & access (electricity, drinking water, clean cooking fuel, mobile phone, bank account, birth registration) | NFHS-5 state factsheet | Same as above | NFHS-5 only for all eight household indicators. Never news articles. Never NSSO or other surveys. |
+| Demography and housing (population, density, urban %, SC/ST %, sex ratio, literacy aged 7+, kuccha houses %) | Census of India (latest) | censusindia.gov.in | Census 2011 is current until 2021 data is officially released. Kuccha houses from Census Housing Tables (HH-6 series). Literacy from Census Primary Census Abstract. |
+| Nutrition outcomes (stunting, wasting, underweight, anaemia) | NFHS-5 state factsheet (same as above) | Same as above | Same as above. No exceptions. |
+| Learning outcomes (reading proficiency, arithmetic proficiency) | ASER annual report | asercentre.org | ASER only. Never NAS. Never a news article citing ASER. Never UDISE. Never memory. |
+| School counts, GER, enrollment, dropout rate, PTR, multigrade schools, small schools | UDISE+ | udiseplus.gov.in | UDISE+ only. Never news summaries. Never state education dept press releases. Fetch the actual state report card. |
+| SDG composite score and all goal-wise scores | NITI Aayog SDG India Index — state dashboard URL | sdgindiaindex.niti.gov.in/#/state-compare?goal=AllGoal&area=[STATE_CODE]&timePeriod=2021 | Fetch the state dashboard URL directly. Never use the PDF (not machine-readable). Never use news summaries. State codes: IND036=Telangana; IND035=AP; IND029=Karnataka; IND033=TN; IND021=Odisha; IND027=MH; IND009=GJ; IND005=RJ; IND024=MP; IND031=UP; IND010=BR. |
+| State budget figures (total expenditure, revenue expenditure, capital outlay, loans given, committed expenditure, own tax revenue, fiscal deficit, outstanding liabilities) | PRS India State Budget Analysis — fetch the actual PDF | prsindia.org/budgets/states/[state]-budget-analysis-[year]; PDF at prsindia.org/files/budget/budget_state/[state]/[year]/ | PRS only for budget. Never use news coverage of the budget. Never use CM budget speech summaries. Fetch and read the PRS PDF. |
+| Top sector expenditure allocations | PRS India State Budget Analysis (Table 4 in the PDF) | Same PDF as above | Extract directly from Table 4 of the PRS PDF. Never from media coverage. |
+| GSDP, per capita income, sector shares of GSVA | MoSPI / RBI Handbook of Statistics on Indian States | mospi.gov.in OR rbi.org.in (Handbook) | State Socio-Economic Outlook acceptable only if MoSPI/RBI figures are inaccessible — and must be flagged. |
+| Health infrastructure (Sub-Centres, PHCs, CHCs, Sub-District Hospitals, District Hospitals, beds, private hospitals) | Health Dynamics of India (Infrastructure and Human Resources) — latest edition | mohfw.gov.in > Documents Section; latest: "Health Dynamics of India 2022-23" at mohfw.gov.in/sites/default/files/ — search "Health Dynamics of India 2022-23 site:mohfw.gov.in" | This is a distinct publication from the National Health Profile. Latest edition covers data as of 31 March 2023. Never use NHP, HMIS, or news articles for these six infrastructure counts. |
+| Beneficiary counts (AWCs, children under 6, pregnant women, MDM coverage) | Poshan Tracker / WDCW state portal; PM Poshan portal; HMIS | poshantracker.in; wdcw.[state].nic.in; pmposhan.edu.in; hmis.nhp.gov.in | Never estimate or derive from population projections without flagging clearly. |
+| Demography (population, density, sex ratio, SC/ST %) | Census of India | censusindia.gov.in | No other sources. Note that 2021 census is not yet fully released. |
+| Labour / unemployment rates | PLFS reports / RBI Handbook T8-T9 | mospi.gov.in; rbi.org.in | |
+| Agriculture (sown area, irrigated area, foodgrain production) | RBI Handbook of Statistics T54-T62 | rbi.org.in | |
+| Forest cover | FSI State of Forest Report | fsi.nic.in | |
+| JJM / water coverage | eJalShakti dashboard | ejalshakti.gov.in/jjmreport | |
+
+**What news articles and state govt press releases ARE permitted for (and only for):**
+- Institutional existence: remote sensing agency, e-governance society, CM fellowship, challenge fund, training institute, grievance portal, vision document, advisory council, caste census
+- Current names: cabinet ministers, secretaries, CM
+- Policy event timestamps: stamp duty revision year, pay commission date, election dates, industrial policy year
+- Stamp Duty revision year, SFC last report year, Pay Commission implementation year — use official dept portal first; newspapers are explicitly permitted as fallback if the official portal returns nothing
+- Political context: ruling party, CM, date of assumption, recent announcements not yet on official portals
+
+---
+
+### Step 4 — Apply the hallucination guard (NON-NEGOTIABLE)
+- Confirmed from search → fill with value + source URL
+- Not confirmable from search → `⚠️ Not confirmed — verify at [source URL]`
+- NEVER estimate, interpolate, or recall from training data without flagging
+- Paywalled or inaccessible → `Not available — [reason]`
+
+### Step 5 — Populate the template
+Fill every row. Every column must be filled. Use `—` only when genuinely not applicable.
+
+### Step 6 — Output
+**NO INTERMEDIATE STEPS. NO NARRATION. NO SEARCH SUMMARIES.**
+Do all research silently. Do not display search queries, fetch attempts, intermediate findings, or commentary about what you are doing or what failed. The user sees only two things:
+
+1. The completed CSV file (presented via the file tool)
+2. A brief summary paragraph (100 words max) noting: which primary sources were successfully fetched, which were blocked/inaccessible (and why), and how many rows remain [UNCONFIRMED] as a result
+
+Nothing else. No "Let me now fetch..." or "I found that..." or "Moving on to...". Run all fetches and searches silently, then output the file and the summary.
+
+---
+
+## Column Definitions
+
+| Column | Content |
+|---|---|
+| **Value** | Number (with unit), Yes/No, or 2–3 sentence answer |
+| **Rank** | National rank among 28 states + 8 UTs where meaningful. `—` if not rankable. `⚠️` if unconfirmed. |
+| **Ref. Period** | Year or survey round (e.g. "2023-24", "NFHS-5 (2019-21)", "Census 2011") |
+| **Source** | Short name + URL |
+| **Comments** | Rank direction, data caveats, staleness warnings, or `—` |
+
+**Rank direction must always be stated in the Comments column** (e.g. "Rank 1 = largest", "Rank 1 = worst/highest").
+
+---
+
+## TEMPLATE
+
+```
+═══════════════════════════════════════════════════════════════════
+STATE PROFILE: [STATE NAME]
+Generated: [Date]
+═══════════════════════════════════════════════════════════════════
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BLOCK A: BASIC FACTS & POLITICAL CONTEXT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+A1. GEOGRAPHY & ADMINISTRATION
+| Indicator                           | Value | Rank | Ref. Period | Source | Comments |
+|---|---|---|---|---|---|
+| Capital city                        |       | —    |             |        |          |
+| Area (sq km)                        |       |      |             |        | Rank 1 = largest |
+| No. of Districts                    |       |      |             |        |          |
+| No. of Revenue Villages             |       |      |             |        |          |
+| No. of Gram Panchayats              |       |      |             |        |          |
+| No. of Municipalities / ULBs        |       |      |             |        |          |
+| No. of Municipal Corporations       |       | —    |             |        |          |
+| No. of Assembly Constituencies      |       | —    |             |        |          |
+| No. of Lok Sabha seats              |       | —    |             |        |          |
+
+A2. POLITICAL CONTEXT (web-search live — do not fill from memory)
+| Indicator                           | Value | Rank | Ref. Period | Source | Comments |
+|---|---|---|---|---|---|
+| Ruling party                        |       | —    |             |        |          |
+| Chief Minister                      |       | —    |             |        |          |
+| Date CM assumed office              |       | —    |             |        |          |
+| CM Economic / Advisory Council      |       | —    |             |        | See Note E |
+
+A3. CABINET MINISTERS (current — web-search "[State] cabinet ministers list 2025")
+| No. | Name | Portfolio(s) | Source | Comments |
+|---|---|---|---|---|
+| 1   |      |              |        | ⚠️ flag if unconfirmed |
+| ... |      |              |        |          |
+
+A4. KEY SECRETARIES / SENIOR IAS OFFICERS (current)
+Search strategy: Google each post individually using plain natural-language queries — e.g. "education secretary telangana", "health secretary telangana", "chief secretary telangana 2025". This returns current postings more reliably than searching IAS batch numbers or formal designation strings. Use the most recent result. Flag [UNCONFIRMED] only if no result found within the last 12 months.
+Titles vary by state (Pr. Secretary / ACS / Secretary). Use whatever the state uses. Flag every unconfirmed name ⚠️.
+
+| Post                                          | Name | IAS Batch/Cadre | Source | Comments |
+|---|---|---|---|---|
+| Chief Secretary                               |      |                 |        |          |
+| Pr. Secretary / ACS — Finance                 |      |                 |        |          |
+| Pr. Secretary / ACS — Planning                |      |                 |        |          |
+| Pr. Secretary / ACS — Health & Family Welfare |      |                 |        |          |
+| Pr. Secretary / ACS — School Education        |      |                 |        |          |
+| Pr. Secretary / ACS — WD, CW & Nutrition      |      |                 |        |          |
+| Mission Director / DG — NHM                   |      |                 |        |          |
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BLOCK B: ECONOMY & LABOUR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+B1. POPULATION & DEMOGRAPHY
+| Indicator                               | Value | Rank | Ref. Period | Source | Comments |
+|---|---|---|---|---|---|
+| Population                              |       |      |             |        | Rank 1 = largest; Source: Census of India |
+| Projected Population                    |       |      |             |        | Source: MoSPI / RGI projections |
+| Population Density (per sq km)          |       |      |             |        | Rank 1 = highest; Source: Census of India |
+| Urban Population (%)                    |       |      |             |        | Source: Census of India (latest) — use Census 2011 until 2021 data released |
+| HHs living in kuccha houses (%)         |       |      |             |        | Source: Census of India (Housing tables) — "Households by type of structure: Kuccha"; Rank 1 = highest |
+| SC Population (%)                       |       | —    |             |        | Source: Census of India |
+| ST Population (%)                       |       | —    |             |        | Source: Census of India |
+| Sex Ratio (females per 1,000 males)     |       |      |             |        | Rank 1 = highest; Source: Census of India |
+| Natural Population Growth Rate          |       |      |             |        | Source: SRS / RBI Handbook T11 |
+
+B2. OUTPUT & INCOME
+| Indicator                                  | Value | Rank | Ref. Period | Source | Comments |
+|---|---|---|---|---|---|
+| GSDP — current prices (₹ crore)            |       |      |             |        | Rank 1 = largest |
+| GSDP Growth Rate (%)                       |       |      |             |        |          |
+| GSDP per Capita — current prices (₹)       |       |      |             |        | Rank 1 = highest |
+| GSDP per Capita (USD)                      |       |      |             |        |          |
+| Net SDP per Capita — constant prices (₹)   |       |      |             |        | Better for trend; RBI Handbook T20 |
+| Primary sector share of GSVA (%)          |       | —    |             |        |          |
+| Secondary sector share of GSVA (%)        |       | —    |             |        |          |
+| Tertiary sector share of GSVA (%)         |       | —    |             |        |          |
+| Major industries / economic base           | [2–3 sentences] | — |       |        |          |
+
+B3. LABOUR & PRICES
+| Indicator                                       | Value | Rank | Ref. Period | Source | Comments |
+|---|---|---|---|---|---|
+| Unemployment Rate — Rural, usual status (%)     |       |      |             |        | From PLFS; RBI Handbook T8; Rank 1 = highest |
+| Unemployment Rate — Urban, usual status (%)     |       |      |             |        | From PLFS; RBI Handbook T9; Rank 1 = highest |
+| Avg. daily wage — agricultural labour, men (₹)  |       |      |             |        | From RBI Handbook T113; Rank 1 = highest |
+| Average CPI Inflation — General (%)             |       |      |             |        | From RBI Handbook T108 |
+| Average CPI Inflation — Food (%)                |       |      |             |        | From RBI Handbook T109 |
+
+B4. AGRICULTURE & ENVIRONMENT
+| Indicator                                   | Value | Rank | Ref. Period | Source | Comments |
+|---|---|---|---|---|---|
+| Net Sown Area (lakh hectares)               |       |      |             |        | Rank 1 = largest; RBI Handbook T54 |
+| Gross Irrigated Area (lakh hectares)        |       |      |             |        | RBI Handbook T55 |
+| Cropping Intensity (%)                      |       |      |             |        | >100% = multi-cropping; RBI Handbook T57 |
+| Total Foodgrain Production (lakh MT)        |       |      |             |        | Rank 1 = largest; RBI Handbook T62 |
+| Forest Cover (% of state area)              |       |      |             |        | From FSI State of Forest Report |
+| Groundwater Extraction (% of availability) |       |      |             |        | Rank 1 = most over-extracted; RBI Handbook T107 |
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BLOCK C: PUBLIC FINANCE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+C1. BUDGET & EXPENDITURE
+| Indicator                                   | Value | Rank | Ref. Period | Source | Comments |
+|---|---|---|---|---|---|
+| Total Budget Size (₹ crore)                 |       |      |             |        | Rank 1 = largest |
+| Revenue Expenditure (₹ crore)               |       | —    |             |        |          |
+| Capital Expenditure (₹ crore)               |       |      |             |        | Rank 1 = highest |
+| Own Tax Revenue (₹ crore)                   |       |      |             |        |          |
+| Own Tax Revenue as % of GSDP               |       |      |             |        |          |
+| Public Expenditure on Health (₹ crore)      |       |      |             |        | From RBI Handbook T18 |
+| Public Expenditure on Education (₹ crore)   |       |      |             |        | From state budget / PRS |
+
+C2. FISCAL POSITION
+| Indicator                                   | Value | Rank | Ref. Period | Source | Comments |
+|---|---|---|---|---|---|
+| Fiscal Deficit as % of GSDP                |       |      |             |        | Rank 1 = highest deficit |
+| State Debt as % of GSDP                    |       |      |             |        | Rank 1 = highest debt |
+| 15th FC Tax Devolution (₹ crore/year)       |       |      |             |        |          |
+| State's share of central taxes (%)          |       | —    |             |        |          |
+| Capital Outlay (₹ crore)                    |       |      |             |        | From PRS Budget Analysis; Rank 1 = highest |
+| Loans given by state (₹ crore)             |       | —    |             |        | From PRS Budget Analysis |
+| Committed expenditure as % of revenue receipts |    |      |             |        | Salaries + pension + interest; from PRS Budget Analysis |
+| Outstanding liabilities as % of GSDP       |       |      |             |        | From PRS Budget Analysis; Rank 1 = highest |
+
+C2b. TOP SECTOR EXPENDITURE (from PRS Budget Analysis — use latest available year)
+Source: prsindia.org/budgets/states/[state]-budget-analysis-[year] — fetch the actual PDF and extract Table 4 (sector-wise expenditure)
+List the THREE largest sectors by budget allocation.
+
+| Rank | Sector | Allocation (₹ crore) | % change over prior year | Key scheme / note | Ref. Period | Source |
+|---|---|---|---|---|---|---|
+| 1st |        |                      |                          |                   |             |        |
+| 2nd |        |                      |                          |                   |             |        |
+| 3rd |        |                      |                          |                   |             |        |
+
+C3. KEY POLICY EVENT TIMESTAMPS
+These capture when major fiscal/administrative reforms last occurred — useful for assessing reform cycle and receptivity to change.
+
+| Event                                                           | Last Occurrence (Year) | Brief Context | Source | Comments |
+|---|---|---|---|---|
+| Stamp Duty — last rate revision                                 |                        |               |        | Search state Registration & Stamps dept portal first; if nothing returned, use newspaper reports |
+| State Finance Commission — last functional SFC report           |                        |               |        | Search state Finance or Rural Development dept portal first; if nothing returned, use newspaper reports. Note SFC number (e.g. 5th SFC). |
+| Pay Commission — last implementation                            |                        |               |        | Search state Finance dept portal first; if nothing returned, use newspaper reports. Note which Pay Commission and whether state issued own award or followed Centre. |
+| PRI / ULB Elections — last held                                 |                        |               |        | Significant for local body functionality |
+| Last state Industrial / Investment Policy revision              |                        |               |        | Name of policy if applicable |
+| Caste census — has one been conducted?                          |                        |               |        | See Note F |
+
+C4. STATE ECONOMIC SURVEY / OUTLOOK
+Most states publish an annual Economic Survey or Economic Review — the state government's own assessment of its economy. This is the primary reference document for any engagement.
+Search: "[State] economic survey [year]" OR "[State] economic review [year]" OR "[State] annual statistical report"
+
+| Item                                        | Details | Source URL | Comments |
+|---|---|---|---|
+| Title of publication                        |         |            |          |
+| Latest edition year                         |         |            |          |
+| Direct URL to latest edition (PDF)          |         |            | Return the actual link |
+| Published by (department)                   |         |            | Usually DES or Planning Dept |
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BLOCK D: HUMAN DEVELOPMENT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+D1. SDG INDEX (NITI Aayog SDG India Index 2023-24)
+Source: sdgindiaindex.niti.gov.in — fetch state URL: sdgindiaindex.niti.gov.in/#/state-compare?goal=AllGoal&area=[STATE_CODE]&timePeriod=2021 (e.g. IND036 for Telangana)
+Scores are on a 0–100 scale. Rank 1 = highest score (best performer) for all rows in this sub-section.
+
+| SDG Goal                                    | Score | Rank | Ref. Period | Source | Comments |
+|---|---|---|---|---|---|
+| COMPOSITE SDG Score                         |       |      |             |        |          |
+| Goal 1 — No Poverty                         |       | —    |             |        |          |
+| Goal 2 — Zero Hunger                        |       | —    |             |        |          |
+| Goal 3 — Good Health & Well-Being           |       | —    |             |        |          |
+| Goal 4 — Quality Education                  |       | —    |             |        |          |
+| Goal 5 — Gender Equality                    |       | —    |             |        |          |
+| Goal 6 — Clean Water & Sanitation           |       | —    |             |        |          |
+| Goal 7 — Affordable & Clean Energy          |       | —    |             |        |          |
+| Goal 8 — Decent Work & Economic Growth      |       | —    |             |        |          |
+| Goal 9 — Industry, Innovation & Infrastructure |    | —    |             |        |          |
+| Goal 10 — Reduced Inequalities              |       | —    |             |        |          |
+| Goal 11 — Sustainable Cities & Communities  |       | —    |             |        |          |
+| Goal 12 — Responsible Consumption          |       | —    |             |        |          |
+| Goal 13 — Climate Action                    |       | —    |             |        |          |
+| Goal 14 — Life Below Water                  |       | —    |             |        | Only for coastal states; N/A otherwise |
+| Goal 15 — Life on Land                      |       | —    |             |        |          |
+| Goal 16 — Peace, Justice & Strong Institutions |    | —    |             |        |          |
+| Multi-dimensional Poverty Index (MPI) score |       |      |             |        | NITI Aayog MPI; Rank 1 = lowest poverty |
+
+D2. HEALTH OUTCOMES
+Rank direction: Rank 1 = worst performing (highest rate) unless stated otherwise.
+
+| Indicator                                     | Value | Rank | Ref. Period | Source | Comments |
+|---|---|---|---|---|---|
+| Infant Mortality Rate (per 1,000 LB)          |       |      |             |        | Source: SRS Statistical Report (latest); Rank 1 = highest IMR |
+| Neonatal Mortality Rate (per 1,000 LB)        |       |      |             |        | Source: NFHS-5; NFHS-5 indicator: "Neonatal mortality rate (per 1,000 live births)"; Rank 1 = highest |
+| Under-5 Mortality Rate (per 1,000 LB)         |       |      |             |        | Source: NFHS-5; NFHS-5 indicator: "Under-five mortality rate (per 1,000 live births)"; Rank 1 = highest |
+| Maternal Mortality Ratio (per 1L LB)          |       |      |             |        | Source: SRS Special Bulletin on MMR (latest); Rank 1 = highest |
+| Total Fertility Rate                           |       |      |             |        | Source: SRS Statistical Report (latest) |
+| Sex Ratio at Birth (females per 1,000 males)   |       |      |             |        | Source: NFHS-5; NFHS-5 indicator: "Sex ratio at birth for children born in the last 5 years (females per 1,000 males)"; Rank 1 = worst (lowest) |
+| Life Expectancy at Birth — total (years)       |       |      |             |        | Source: SRS Statistical Report (latest); Rank 1 = highest |
+| Birth Rate (per 1,000)                         |       |      |             |        | Source: SRS Statistical Report (latest) |
+| Death Rate (per 1,000)                         |       |      |             |        | Source: SRS Statistical Report (latest) |
+| Institutional Delivery (%)                     |       |      |             |        | Source: NFHS-5; Rank 1 = lowest coverage |
+| % Pregnant women who completed 4+ ANC visits  |       |      |             |        | Source: NFHS-5; exact indicator: "Mothers who had at least 4 antenatal care visits (%)" |
+| Full Immunisation coverage (%)                 |       |      |             |        | Source: NFHS-5; Rank 1 = lowest |
+
+D2b. HOUSEHOLD CONDITIONS & ACCESS (NFHS-5 2019-21)
+Source for all rows: NFHS-5 state factsheet — rchiips.org/nfhs/NFHS-5Reports/[State].pdf OR dhsprogram.com/pubs/pdf/OF43/OF43.[code].pdf
+Exact indicator names as they appear in NFHS-5 factsheets are listed in Comments.
+
+| Indicator                                              | Value | Rank | Ref. Period | Source | Comments |
+|---|---|---|---|---|---|
+| HHs with electricity (%)                              |       |      |             |        | NFHS-5 indicator: "Households with electricity (%)" |
+| HHs with improved drinking water source (%)           |       |      |             |        | NFHS-5 indicator: "Households with an improved drinking-water source (%)"; improved = piped water / tube well / protected well / spring / rainwater |
+| HHs using improved sanitation facility (%)            |       |      |             |        | NFHS-5 indicator: "Households using an improved sanitation facility (%)"; Rank 1 = lowest coverage |
+| HHs with clean cooking fuel (%)                       |       |      |             |        | NFHS-5 indicator: "Households using clean fuel for cooking (%)"; clean = LPG / natural gas / biogas / electricity |
+| Women with a mobile phone (%)                         |       |      |             |        | NFHS-5 indicator: "Women who use a mobile phone (% age 15-49)" |
+| Women with a bank or savings account (%)              |       |      |             |        | NFHS-5 indicator: "Women who have a bank or savings account that they themselves use (% age 15-49)" |
+| Births registered with civil authority (%)            |       |      |             |        | NFHS-5 indicator: "Birth registration (children under age 5 whose birth was registered, %)" |
+
+D3. NUTRITION (NFHS-5 2019-21 unless noted)
+| Indicator                                     | Value | Rank | Ref. Period | Source | Comments |
+|---|---|---|---|---|---|
+| Stunting — children under 5 (%)               |       |      |             |        | Rank 1 = highest |
+| Wasting — children under 5 (%)                |       |      |             |        | Rank 1 = highest |
+| Underweight — children under 5 (%)            |       |      |             |        | Rank 1 = highest |
+| Anaemia — women 15–49 (%)                     |       |      |             |        | Rank 1 = highest |
+| Anaemia — children 6–59 months (%)            |       |      |             |        | Rank 1 = highest |
+| Anaemia — pregnant women (%)                  |       |      |             |        | RBI Handbook T15 |
+
+D4. EDUCATION OUTCOMES
+| Indicator                                          | Value | Rank | Ref. Period | Source | Comments |
+|---|---|---|---|---|---|
+| Literacy Rate — persons aged 7+ (%)                |       |      |             |        | Source: Census of India (latest); Rank 1 = lowest |
+| Female Literacy Rate — aged 7+ (%)                 |       |      |             |        | Source: Census of India (latest); Rank 1 = lowest |
+| Gender Parity Index — GER (elementary)             |       |      |             |        | RBI Handbook T12 |
+| GER — Elementary (Classes 1–8)                    |       | —    |             |        | UDISE+ |
+| GER — Secondary (Classes 9–10)                    |       | —    |             |        | UDISE+ |
+| GER — Higher Secondary (Classes 11–12)            |       | —    |             |        | UDISE+ |
+| ASER — Std V reading Std II text (%)               |       |      |             |        | Rank 1 = lowest; rural survey only |
+| ASER — Std V can do division (%)                   |       |      |             |        | Rank 1 = lowest; rural survey only |
+| Pupil-Teacher Ratio — Govt schools                 |       |      |             |        | Rank 1 = worst (highest) ratio |
+| Out-of-school children (approx.)                   |       |      |             |        |          |
+
+D5. BENEFICIARY POPULATIONS
+These figures define the operational universe for health, nutrition, and education programmes — essential for scoping programme reach.
+
+| Indicator                                           | Value | Rank | Ref. Period | Source | Comments |
+|---|---|---|---|---|---|
+| Pregnant women per year (ANC registrations)         |       | —    |             |        | From HMIS annual ANC 1st contact; proxy for maternal programme universe |
+| Live births per year                                |       | —    |             |        | From HMIS or SRS |
+| Children under 6 (ICDS / Poshan beneficiaries)      |       | —    |             |        | From Poshan Tracker; direct ICDS programme universe |
+| Adolescent girls registered (WDCW / Kishori scheme) |       | —    |             |        | From Poshan Tracker / WCD Ministry |
+| Total enrolled students — Govt schools              |       | —    |             |        | From UDISE+; govt school programme universe |
+| Total enrolled students — all schools               |       | —    |             |        | From UDISE+ |
+| Children covered under PM Poshan (Mid-Day Meal)     |       | —    |             |        | From PM Poshan portal |
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BLOCK E: PHYSICAL & DIGITAL INFRASTRUCTURE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+E1. HEALTH INFRASTRUCTURE
+| Indicator                                    | Value | Rank | Ref. Period | Source | Comments |
+|---|---|---|---|---|---|
+| No. of Sub-Centres (public)                  |       |      |             |        | Source: Health Dynamics of India (Infrastructure & HR) latest — mohfw.gov.in |
+| No. of PHCs (public)                         |       |      |             |        | Source: Health Dynamics of India (Infrastructure & HR) latest — mohfw.gov.in |
+| No. of CHCs (public)                         |       |      |             |        | Source: Health Dynamics of India (Infrastructure & HR) latest — mohfw.gov.in |
+| No. of Sub-District / District Hospitals (public) |    |      |             |        | Source: Health Dynamics of India (Infrastructure & HR) latest — mohfw.gov.in |
+| No. of Govt hospital beds                    |       |      |             |        | Source: Health Dynamics of India (Infrastructure & HR) latest — mohfw.gov.in |
+| No. of Private Hospitals / Nursing Homes     |       |      |             |        | Source: Health Dynamics of India (Infrastructure & HR) latest — mohfw.gov.in; often undercounted |
+| No. of Anganwadi Centres (functional)        |       |      |             |        | Poshan Tracker / WCD |
+| Doctors & specialists per 1L population      |       |      |             |        | Rank 1 = highest; RBI Handbook T16 |
+
+E2. EDUCATION INFRASTRUCTURE
+| Indicator                                    | Value | Rank | Ref. Period | Source | Comments |
+|---|---|---|---|---|---|
+| No. of Government / Govt-aided Schools       |       |      |             |        | UDISE+ |
+| No. of Private Unaided Schools               |       |      |             |        | UDISE+ |
+| Govt schools with fewer than 30 enrolled students |    |      |             |        | UDISE+ state report card; signals consolidation need |
+| No. of multigrade teaching govt schools      |       |      |             |        | UDISE+; defined as one teacher teaching multiple grades |
+
+E3. CONNECTIVITY & UTILITIES
+| Indicator                                    | Value | Rank | Ref. Period | Source | Comments |
+|---|---|---|---|---|---|
+| % HHs with tap water connection (JJM)        |       |      |             |        |          |
+| % Villages electrified                       |       |      |             |        |          |
+| Per capita power availability (kWh)          |       |      |             |        | RBI Handbook T138 |
+| Installed power capacity (MW)                |       |      |             |        | RBI Handbook T140 |
+| NH length in state (km)                      |       |      |             |        | Rank 1 = longest |
+| State Highway length (km)                    |       |      |             |        |          |
+| Railway route length (km)                    |       |      |             |        |          |
+| No. of functional airports                   |       | —    |             |        |          |
+| Internet penetration (approx. %)             |       |      |             |        |          |
+| Mobile tele-density (per 100 persons)        |       |      |             |        |          |
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BLOCK F: INSTITUTIONAL INFRASTRUCTURE & GOVERNANCE CAPACITY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+F1. NITI AAYOG PROGRAMMES IN STATE
+| Indicator                                              | Value | Rank | Ref. Period | Source | Comments |
+|---|---|---|---|---|---|
+| No. of Aspirational Districts (ADP)                   |       | —    |             |        | Names; championsofchange.gov.in |
+| Names of Aspirational Districts                        | [list]| —    |             |        |          |
+| No. of Aspirational Blocks (ABP)                      |       | —    |             |        | 500 blocks across 27 states; launched Jan 2023 |
+| Names of Aspirational Blocks                           | [list]| —    |             |        | abp.championsofchange.gov.in |
+
+F2. GOVERNANCE INSTITUTIONS
+Format: Yes/No in Value; full name, year established, website in Comments.
+Do NOT assume any institution exists or doesn't — web-search each explicitly.
+
+| Indicator                                                         | Value | Rank | Ref. Period | Source | Comments |
+|---|---|---|---|---|---|
+| Remote Sensing Agency                                             |       | —    |             |        | Full name + website if Yes |
+| State Planning Commission / Planning Board                        |       | —    |             |        | Full name + year established |
+| State Data Centre (NIC or state-run)                              |       | —    |             |        | Scope / operational status |
+| SDG Dashboard (publicly accessible)                               |       | —    |             |        | URL if Yes |
+| CM-level Fellowship / Young Professionals Programme               |       | —    |             |        | Full name, cohort size, website |
+| Dedicated Data Analytics Unit (DAU)                               |       | —    |             |        | See Note A |
+| Integrated State Resident Dataset / Unified Beneficiary Registry  |       | —    |             |        | See Note B |
+| State Transformation / Policy Advisory Institution                |       | —    |             |        | See Note C |
+| State Technology / e-Governance Society                           |       | —    |             |        | See Note D |
+| CM Economic / Advisory Council                                    |       | —    |             |        | See Note E |
+| State Finance Commission — functional?                            |       | —    |             |        | Latest SFC report year |
+| State budget published on public portal                           |       | —    |             |        | URL if Yes |
+| Regional Development / Planning Boards                            |       | —    |             |        | See Note G |
+| Out-of-budget / Challenge Fund                                    |       | —    |             |        | See Note H |
+| Training Institute for Govt Employees                             |       | —    |             |        | Full name + website if Yes |
+| e-Procurement Policy / Portal                                     |       | —    |             |        | URL of portal if Yes |
+| Unified Grievance Redressal Mechanism                             |       | —    |             |        | Name + portal URL if Yes |
+| Vision 2047 / Long-term State Development Document                |       | —    |             |        | Title + URL of document |
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STATE PERFORMANCE SUMMARY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Write exactly two paragraphs, each approximately 100 words. Base ONLY on indicators already populated in this profile — do not introduce external information or opinions. Use national rank and indicator values as evidence. No value judgements on policy choices; describe performance relative to other states using the data.
+
+WHAT THE STATE IS DOING WELL (relative to national average / peer states):
+[~100 words. Cite specific indicators and ranks. E.g. "Ranks Nth on X", "above national average on Y", "among top quintile on Z". Only include dimensions where the state's rank or value is demonstrably better than the national median.]
+
+AREAS WHERE THE STATE LAGS (relative to national average / peer states):
+[~100 words. Cite specific indicators and ranks. E.g. "Ranks Nth (out of 36) on X", "below national average on Y". Only include dimensions where the state's rank or value is demonstrably worse than the national median. Do not editorialize — state the gap, not the cause.]
+
+═══════════════════════════════════════════════════════════════════
+SOURCES
+═══════════════════════════════════════════════════════════════════
+[1] ...
+[2] ...
+```
+
+---
+
+## EXPLANATORY NOTES FOR INSTITUTIONAL FLAGS
+
+**NOTE A — Dedicated Data Analytics Unit (DAU)**
+A small specialised unit of data scientists embedded in a core government department (typically Planning, Finance, or Directorate of Economics & Statistics) with an explicit mandate to analyse administrative data and produce decision-support outputs for senior officials. This is distinct from a general IT department or NIC data centre. Benchmark examples: Tamil Nadu's DAU within the Directorate of Economics and Statistics — announced in Budget Speech 2015-16, the first such unit in India, operated in collaboration with TNeGA (des.tn.gov.in/en/node/40); Andhra Pradesh's DAU under Finance Dept / APCFSS, which co-develops analytical frameworks with line departments (dau.apcfss.in). Search: "[State] data analytics unit planning statistics finance" OR "[State] DAU evidence-based policy". If found: full name, parent department, year established, website.
+
+**NOTE B — Integrated State Resident Dataset / Unified Beneficiary Registry**
+A cross-departmental, deduplicated citizen database linking records across welfare schemes and service delivery systems using a common state-level unique identifier. A strong indicator of data infrastructure maturity — enables DBT rationalisation, duplicate elimination, and cross-programme targeting. Benchmark examples: Samagra Vedika (Telangana) links welfare data across departments using a state household ID; Makkal ID / TN e-Governance (Tamil Nadu). Search: "[State] integrated beneficiary database" OR "[State] unified resident registry" OR "[State] Samagra equivalent" OR "[State] household registry welfare data". If found: full name, year launched, coverage (residents / schemes linked), website.
+
+**NOTE C — State Transformation / Policy Advisory Institution**
+A dedicated institution under the Planning Department or CMO providing in-house policy research, programme management support, and capacity building to the state government — functioning as a state-level NITI Aayog equivalent. Some are affiliated with NITI Aayog's State Support Mission (niti.gov.in/divisions/mission/state-support-mission). Search: "[State] institute of transformation" OR "[State] state support mission" OR "[State] good governance institute" OR "[State] institute for development policy". If found: full name, parent department, year established, website.
+
+**NOTE D — State Technology / e-Governance Society**
+A registered society or autonomous body mandated to design, procure, and manage the state government's technology and data systems for service delivery. The primary technology implementation arm of the state, typically controlling significant IT budget and data infrastructure. Benchmark examples: Centre for Good Governance (CGG) — Telangana/AP (cgg.gov.in); Centre for e-Governance (CeG) — Karnataka (ceg.karnataka.gov.in); Tamil Nadu e-Governance Agency (TNeGA) — Tamil Nadu (tnega.tn.gov.in). Search: "[State] e-governance society" OR "[State] centre for good governance technology" OR "[State] IT agency government society". If found: full name, year established, parent department, website.
+
+**NOTE E — CM Economic / Advisory Council**
+Some Chief Ministers have constituted a formal advisory council of external experts (economists, academics, former officials) to provide independent guidance on economic and social policy. This signals the government's openness to technocratic input and evidence-based policymaking. Well-documented examples: Tamil Nadu CM's Economic Advisory Council (Duflo, Rajan, Drèze, Arvind Subramanian, S Narayan — constituted 2021); Odisha CM's Economic Advisory Council (announced 2025). Search: "[State] chief minister economic advisory council" OR "[State] CM advisory council economists" OR "[State] economic advisory council members". If found: note full name, members, year constituted, and whether currently active.
+
+**NOTE F — Caste Census**
+A caste census (also called OBC survey or socio-economic caste survey) is a state-conducted enumeration of caste-wise population beyond SC/ST. As of 2025, only a few states have conducted these: Bihar released its Caste Survey data in October 2023; Telangana conducted a Comprehensive Household Survey (Gruha Lakshmi / Samajik, Aarthik, Jaati Ganana) with caste enumeration in 2023-24; Karnataka conducted a caste survey. Most states have not. Search: "[State] caste census survey year" OR "[State] OBC survey population data" OR "[State] socio-economic caste enumeration". If Yes: note the year conducted, who conducted it, whether data was publicly released, and key finding if available. If No: state "No state-level caste census conducted as of [year]."
+
+**NOTE G — Regional Development / Planning Boards**
+Some large states have constituted statutory or executive boards to address regional imbalances within the state — providing dedicated development funds, planning authority, and administrative focus to historically underdeveloped sub-regions. These are distinct from the state planning commission and operate at the sub-state level. Well-documented examples: Kalyana Karnataka Regional Development Board (KKRDB) — for the six districts of the Hyderabad-Karnataka region (kkrdb.karnataka.gov.in); Vidarbha Development Board and Marathwada Development Board in Maharashtra; Bundelkhand Development Board in UP/MP. Search: "[State] regional development board" OR "[State] regional planning board" OR "[State] backward region development board" OR "[State] area development authority". If found: list each board's full name, the sub-region it covers (list districts if possible), year established, legal basis (Act / GO), and website.
+
+**NOTE H — Out-of-budget / Challenge Fund**
+Some states operate a discretionary fund — outside the normal departmental budget cycle — that departments, districts, or implementing agencies can apply to on a competitive basis, in order to access supplementary financing for innovation, pilots, or scale-up. These are sometimes called challenge funds, innovation funds, or competitive grant schemes. They are distinct from normal budget allocations and from centrally-sponsored scheme funds. They are also distinct from the National Urban Innovation Challenge Fund (do not count this). Well-documented examples: TANII (Tamil Nadu Innovation and Incubation fund — tanii.tn.gov.in); Telangana's SERP Challenge Fund (Rs 12.66 crore for SHG women-led enterprises, 2026). Search: "[State] challenge fund government departments" OR "[State] innovation fund districts apply" OR "[State] competitive grant departments" OR "[State] out of budget fund". If found: name of fund, administering body, size (Rs crore), who can apply, purpose, and URL.
+
+---
+
+## Hallucination Guard — Strict Rules (NON-NEGOTIABLE)
+
+1. **No memory fills.** Every number, name, and Yes/No must come from a web search in this session.
+2. **Unconfirmed = flagged.** Cannot confirm from search → `⚠️ Not confirmed — verify at [source URL]`.
+3. **Fixed source assignments are non-negotiable.** The table in Step 3 assigns one source per indicator category. That source is the only permitted source. If it is inaccessible: flag `[UNCONFIRMED - verify at source URL]` and state the access barrier. Never silently substitute a news article, a Wikipedia entry, or a secondary aggregator — even if the figure they cite appears identical to what the primary source would show. The citation must point to the primary source, not to something that quoted it.
+4. **Names especially.** Cabinet and secretary postings change frequently. Always search live. Never fill from memory.
+5. **Ranks from search.** Never compute from memory. Derive from a source table or search `[indicator] state-wise India ranking`. Unconfirmed → `⚠️`.
+6. **Institutional flags.** Do not assume existence. Search each explicitly. News articles and state govt portals are acceptable for institutional Yes/No questions.
+7. **Stale data.** If best available is >3 years old, flag in Comments. Never substitute a guess.
+
+---
+
+## Search & Fetch Batching Guide
+
+Run in this order. For multi-indicator sources (marked **FETCH**): retrieve the document once and extract ALL relevant fields from it in a single pass — do not run separate searches per indicator from the same source. For point queries (marked **SEARCH**): a targeted web search is sufficient.
+
+**FETCH 1 — RBI Handbook of Statistics on Indian States (latest)**
+Search: `RBI Handbook of Statistics on Indian States [latest year] PDF site:rbi.org.in` → fetch the PDF URL returned
+Extract in one pass for the state: GSDP (T21), per capita NDP (T20), unemployment rural/urban (T8/T9), agricultural wage (T113), CPI general (T108), CPI food (T109), net sown area (T54), irrigated area (T55), foodgrain production (T62), forest cover (T99), groundwater (T107), birth rate (T2), death rate (T3), life expectancy (T7), IMR (T4), TFR (T6)
+
+**FETCH 2 — NFHS-5 state factsheet**
+Try in order: rchiips.org/nfhs/NFHS-5Reports/[State].pdf → dhsprogram.com/pubs/pdf/OF43/OF43.[code].pdf → NITI Aayog SNP report for state (niti.gov.in/sites/default/files/[year]/SNP_[State].pdf)
+Extract in one pass: TFR, neonatal mortality rate, under-5 mortality rate, sex ratio at birth, institutional delivery, 4+ ANC visits, full immunisation, stunting, wasting, underweight, child anaemia, women anaemia, pregnant women anaemia, HHs with electricity, improved drinking water, improved sanitation, clean cooking fuel, women with mobile phone, women with bank account, birth registration
+
+**FETCH 3 — SRS Statistical Report (vital statistics)**
+Search: `SRS Statistical Report [latest year] PDF site:censusindia.gov.in` → fetch
+Extract in one pass: IMR, U5MR, birth rate, death rate, life expectancy, TFR
+Then separately fetch: `SRS Special Bulletin MMR [latest year]` → extract MMR
+
+**FETCH 4 — NITI Aayog SDG India Index (latest)**
+Search: `SDG India Index [latest year] state scores PDF site:niti.gov.in` → fetch; also try sdgindiaindex.niti.gov.in directly
+Extract in one pass: composite score + all 16 goal-wise scores for the state
+Do NOT run a separate search per SDG goal — all scores are in the same document
+
+**FETCH 5 — Health Dynamics of India (Infrastructure & HR, latest)**
+Search: `"Health Dynamics of India" "Infrastructure and Human Resources" 2022-23 site:mohfw.gov.in` → fetch PDF
+Extract in one pass: Sub-Centres, PHCs, CHCs, Sub-District Hospitals, District Hospitals, beds, private hospitals for the state
+
+**FETCH 6 — PRS Budget Analysis (latest year)**
+Fetch: prsindia.org/budgets/states/[state]-budget-analysis-[year] → then fetch the PDF linked from that page
+Extract in one pass: total expenditure, revenue expenditure, capital outlay, loans given, OTR, OTR as % GSDP, fiscal deficit % GSDP, outstanding liabilities % GSDP, committed expenditure %, FC devolution, top 3 sector allocations
+
+**FETCH 7 — UDISE+ state report card**
+Fetch: udiseplus.gov.in → Reports → State Report Cards → select state and latest year
+If direct navigation fails, search "[State] UDISE+ 2023-24 state report card" and fetch the resulting page or PDF
+Extract in one pass: government school count, private school count, GER elementary (Cl. 1-8), GER secondary (Cl. 9-10), GER higher secondary (Cl. 11-12), total enrollment (govt and private), dropout rate, PTR, schools with <30 students, multigrade schools
+Note: If udiseplus.gov.in is inaccessible, search "[State] UDISE 2023-24 GER enrollment figures" — Ministry of Education press releases and state education dept publications routinely publish all GER figures and can substitute
+
+**FETCH 8 — Census of India (state-level tables)**
+Fetch: censusindia.gov.in → state primary census abstract and housing tables
+Extract in one pass: population, density, urban %, sex ratio, SC %, ST %, literacy aged 7+ (from PCA), kuccha houses % (from Housing Table HH-6 series)
+
+**SEARCH 9** — `[State] chief minister cabinet ministers list 2025`
+**SEARCH 10** — Secretary searches: Google each individually with plain queries: "chief secretary [State]", "health secretary [State]", "education secretary [State]", "finance secretary [State]", "planning secretary [State]", "women child welfare secretary [State]" — use most recent result for each
+**SEARCH 11** — `[State] CM economic advisory council members 2025`
+**SEARCH 12** — `[State] socio-economic outlook OR economic survey [latest year] PDF` — fetch the PDF returned
+**SEARCH 13** — `[State] ASER 2024 reading arithmetic results` — fetch ASER state page or report
+**SEARCH 14** — `[State] anganwadi centres total WDCW poshan tracker`
+**SEARCH 15** — `[State] aspirational districts names NITI Aayog`
+**SEARCH 16** — `[State] aspirational blocks names ABP`
+**SEARCH 17** — `[State] remote sensing agency planning commission SDG dashboard`
+**SEARCH 18** — `[State] CM fellowship young professionals programme`
+**SEARCH 19** — `[State] data analytics unit planning statistics`
+**SEARCH 20** — `[State] integrated beneficiary database unified registry`
+**SEARCH 21** — `[State] e-governance society centre technology IT agency`
+**SEARCH 22** — `[State] institute transformation good governance NITI`
+**SEARCH 23** — `[State] stamp duty revision year` (official portal first; newspapers as fallback)
+**SEARCH 24** — `[State] state finance commission report year` (official portal first; newspapers as fallback)
+**SEARCH 25** — `[State] pay commission implementation year` (official portal first; newspapers as fallback)
+**SEARCH 26** — `[State] caste census OBC survey conducted year`
+**SEARCH 27** — `[State] regional development board backward region`
+**SEARCH 28** — `[State] challenge fund innovation fund departments apply`
+**SEARCH 29** — `[State] administrative training institute government employees`
+**SEARCH 30** — `[State] e-procurement portal mandatory policy`
+**SEARCH 31** — `[State] grievance redressal portal unified mechanism`
+**SEARCH 32** — `[State] vision 2047 OR Viksit [State] OR [State] rising 2047`
+**SEARCH 33** — State-wise rank searches: `state-wise IMR ranking India`, `state-wise GSDP ranking India`, `SDG India Index state rankings [latest year]`
+
+Consult `references/source_map.md` for exact URLs per field.
+
+
+---
+
+## Quality Checklist (before printing output)
+- [ ] All six blocks filled; no section skipped
+- [ ] Every row has all 5 columns (no blanks)
+- [ ] Every number has a unit and year
+- [ ] All unconfirmed values flagged ⚠️
+- [ ] **Fetch-once check:** RBI Handbook, NFHS-5 factsheet, SDG Index, SRS, Health Dynamics of India, PRS Budget, UDISE+, and Census were each fetched once as a document and all indicators extracted in a single pass — not searched field by field
+- [ ] SDG goal-wise scores fetched from state dashboard URL (sdgindiaindex.niti.gov.in/#/state-compare?goal=AllGoal&area=[STATE_CODE]&timePeriod=2021) — not from PDF, not from news summaries
+- [ ] NFHS-5 values sourced from rchiips.org factsheet, dhsprogram.com OF43 PDF, or NITI Aayog SNP report — not from news articles
+- [ ] ASER data sourced from asercentre.org report — not NAS or media reports
+- [ ] UDISE+ data sourced from udiseplus.gov.in — not media summaries
+- [ ] Aspirational Districts AND Aspirational Blocks both filled with names
+- [ ] Cabinet searched live — no names from memory
+- [ ] Secretary postings searched live — no names from memory
+- [ ] Caste census field answered (Yes/No/Not conducted)
+- [ ] CM advisory council field answered
+- [ ] All institutional flags (Notes A–G) searched live, not assumed
+- [ ] Regional planning boards searched and answered
+- [ ] All ranks confirmed from source, not from memory
+- [ ] Economic survey URL populated
+- [ ] Performance summary written (~100 words each paragraph, data-only, no opinion)
+- [ ] Sources section complete and numbered
